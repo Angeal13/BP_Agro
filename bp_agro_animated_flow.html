@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BP Agro — Flujos de Datos Animados · Guinea Ecuatorial</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090a;--bg2:#0b0e10;--bg3:#0f1412;--bg4:#141a14;
+  --g:#4ade80;--g2:#22c55e;--g3:#86efac;
+  --b:#4da8ff;--o:#f59e0b;--o2:#d97706;--r:#ef4444;
+  --p:#c084fc;--t:#2dd4bf;--y:#facc15;
+  --tx:#dce8f8;--ts:#6a7f6a;--tss:#2f3f2f;
+  --bd:rgba(255,255,255,.07);
+  --f:'Space Grotesk',sans-serif;--fm:'JetBrains Mono',monospace
+}
+html,body{height:100%;font-family:var(--f);background:var(--bg);color:var(--tx)}
+body{display:flex;flex-direction:column;overflow:hidden}
+.sys-header{flex-shrink:0;background:var(--bg2);border-bottom:1px solid rgba(74,222,128,.15);padding:8px 20px;display:flex;align-items:center;gap:14px}
+.sys-badge{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--bg);background:var(--g);padding:3px 8px;border-radius:3px;letter-spacing:1px;flex-shrink:0}
+.sys-name{font-size:13px;font-weight:600;letter-spacing:-.2px;color:var(--tx)}
+.sys-sub{font-size:10px;color:var(--ts);margin-left:auto;font-family:var(--fm)}
+.sys-dot{width:6px;height:6px;border-radius:50%;background:var(--g);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,.4)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(74,222,128,0)}}
+nav{flex-shrink:0;display:flex;align-items:stretch;background:var(--bg2);border-bottom:1px solid var(--bd);padding:0 20px;overflow-x:auto}
+.tab{padding:13px 16px;font-size:11.5px;font-weight:500;color:var(--ts);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;letter-spacing:.3px}
+.tab:hover{color:var(--tx)}
+.tab.on{color:var(--g);border-bottom-color:var(--g)}
+.tab-lbl{font-size:9px;font-weight:400;color:var(--tss);display:block;margin-top:1px;letter-spacing:.5px}
+.page{display:none;flex:1;overflow:hidden;position:relative}
+.page.on{display:flex;flex-direction:column}
+.page-hdr{padding:14px 22px 10px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.page-title{font-size:18px;font-weight:600;letter-spacing:-.3px}
+.page-sub{font-size:11.5px;color:var(--ts);margin-top:4px;line-height:1.65}
+.canvas-wrap{flex:1;position:relative;overflow:hidden}
+canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+.legend{position:absolute;bottom:14px;left:16px;display:flex;flex-wrap:wrap;gap:7px;z-index:10}
+.leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ts);background:rgba(7,9,10,.85);padding:4px 8px;border-radius:4px;border:1px solid var(--bd)}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.steps{position:absolute;bottom:14px;right:14px;width:240px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px;z-index:10}
+.step-title{font-size:10px;font-weight:600;color:var(--g);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase}
+.step-item{display:flex;gap:8px;padding:4px 0;font-size:11px;color:var(--tss);transition:color .3s}
+.step-item.active-step{color:var(--tx)}
+.step-num{font-family:var(--fm);font-size:10px;color:var(--tss);flex-shrink:0;padding-top:1px}
+.step-item.active-step .step-num{color:var(--g)}
+.pkt-log{position:absolute;top:14px;left:14px;width:210px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:10px;z-index:10;max-height:190px;overflow:hidden}
+.pkt-log-title{font-size:10px;font-weight:600;color:var(--g);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+.pkt-entry{font-family:var(--fm);font-size:9px;color:var(--ts);padding:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pkt-entry.new{color:var(--g)}
+.com-badge{position:absolute;top:14px;right:250px;z-index:10}
+.com-badge-inner{font-family:var(--fm);font-size:9px;font-weight:500;color:var(--o);border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);padding:4px 10px;border-radius:4px;letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<div class="sys-header">
+  <div class="sys-dot"></div>
+  <div class="sys-badge">BP AGRO</div>
+  <div class="sys-name">Plataforma IoT Agrícola · Guinea Ecuatorial</div>
+  <div class="sys-sub">BP TECHNOLOGY · PLATAFORMA COMERCIAL</div>
+</div>
+
+<nav>
+  <div class="tab on" onclick="goPage(0,this)">A — Nodo Sensor<span class="tab-lbl">PI 3 · SUELO · RS-485</span></div>
+  <div class="tab" onclick="goPage(1,this)">B — Gateway de Finca<span class="tab-lbl">ZONAS · CULTIVOS · AURORA</span></div>
+  <div class="tab" onclick="goPage(2,this)">C — Cloud Pipeline<span class="tab-lbl">AURORA · API · ALERTAS</span></div>
+  <div class="tab" onclick="goPage(3,this)">D — Dashboard Botánico<span class="tab-lbl">ANÁLISIS · HISTÓRICO</span></div>
+  <div class="tab" onclick="goPage(4,this)">E — Resumen General<span class="tab-lbl">VISTA COMPLETA</span></div>
+</nav>
+
+<!-- PAGE A -->
+<div class="page on" id="page0">
+  <div class="page-hdr">
+    <div class="page-title">A — Nodo Sensor (Raspberry Pi 3) — bp-agro-sensor-node</div>
+    <div class="page-sub">El Pi 3 lee sensores de suelo via RS-485 o GPIO cada 15 minutos. Valida rangos localmente y envía lecturas al gateway por HTTP LAN. Sin conexión a internet — solo red local de la finca. Humedad · pH · temperatura · NPK · conductividad eléctrica.</div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="cvA"></canvas>
+    <div class="pkt-log" id="logA"><div class="pkt-log-title">Lecturas activas</div></div>
+    <div class="legend" id="legA"></div>
+    <div class="steps" id="stepsA"></div>
+    <div class="com-badge"><div class="com-badge-inner">PLATAFORMA COMERCIAL</div></div>
+  </div>
+</div>
+
+<!-- PAGE B -->
+<div class="page" id="page1">
+  <div class="page-hdr">
+    <div class="page-title">B — Gateway de Finca (Pi 4 / x86) — bp-agro-farm-gateway</div>
+    <div class="page-sub">El gateway agrega lecturas de todos los sensores de la finca, gestiona zonas y cultivos (50 tipos, historial de rotación permanente), y sube datos a AWS Aurora con pre-verificación de duplicados. Dos paths de propagación: sync queue (fiable) y notify inmediato (rápido).</div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="cvB"></canvas>
+    <div class="pkt-log" id="logB"><div class="pkt-log-title">Eventos activos</div></div>
+    <div class="legend" id="legB"></div>
+    <div class="steps" id="stepsB"></div>
+  </div>
+</div>
+
+<!-- PAGE C -->
+<div class="page" id="page2">
+  <div class="page-hdr">
+    <div class="page-title">C — Pipeline Cloud: Aurora → API → Alertas</div>
+    <div class="page-sub">AWS Aurora recibe todos los datos de las fincas. La Business API gestiona clientes y fincas (sin rutas de gateway o sensor — separación explícita). El motor de alertas polling Aurora detecta umbrales críticos y notifica al agricultor por SMS/WhatsApp.</div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="cvC"></canvas>
+    <div class="pkt-log" id="logC"><div class="pkt-log-title">Eventos activos</div></div>
+    <div class="legend" id="legC"></div>
+    <div class="steps" id="stepsC"></div>
+  </div>
+</div>
+
+<!-- PAGE D -->
+<div class="page" id="page3">
+  <div class="page-hdr">
+    <div class="page-title">D — Dashboard Botánico — bp-agro-botanist-dashboard</div>
+    <div class="page-sub">Dashboard HTML con fetch() a la API real — sin mocks ni datos simulados. El botánico o agrónomo accede al historial completo sin procesar por zona y cultivo. Datos de calibración, rotación de cultivos y tendencias temporales de todos los parámetros.</div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="cvD"></canvas>
+    <div class="pkt-log" id="logD"><div class="pkt-log-title">Eventos activos</div></div>
+    <div class="legend" id="legD"></div>
+  </div>
+</div>
+
+<!-- PAGE E -->
+<div class="page" id="page4">
+  <div class="page-hdr">
+    <div class="page-title">E — Resumen General: Campo → Gateway → Aurora → Usuarios</div>
+    <div class="page-sub">Vista completa del sistema: sensores leyendo el suelo, gateways agregando y subiendo a Aurora, motor de alertas notificando al agricultor, botánicos analizando datos históricos y la API de negocio gestionando clientes.</div>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="cvE"></canvas>
+    <div class="pkt-log" id="logE"><div class="pkt-log-title">Eventos activos</div></div>
+    <div class="legend" id="legE"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const C={g:'#4ade80',g2:'#22c55e',b:'#4da8ff',o:'#f59e0b',o2:'#d97706',r:'#ef4444',p:'#c084fc',t:'#2dd4bf',y:'#facc15',ts:'#6a7f6a',tss:'#2f3f2f',bg:'#07090a',bg2:'#0b0e10',bg3:'#0f1412',tx:'#dce8f8'};
+const F="'Space Grotesk',sans-serif",FM="'JetBrains Mono',monospace";
+function lerp(a,b,t){return a+(b-a)*t}
+function hex(c,a){const r=parseInt(c.slice(1,3),16),g=parseInt(c.slice(3,5),16),b=parseInt(c.slice(5,7),16);return `rgba(${r},${g},${b},${a})`;}
+
+class Particle{
+  constructor(path,color,label,speed,size,loop){this.path=path;this.color=color;this.label=label;this.speed=speed||1.2;this.size=size||5;this.loop=loop!==false;this.t=Math.random();this.done=false;this.trail=[];}
+  update(){this.t+=this.speed*0.004;const p=this.getPos(this.t);this.trail.push({...p});if(this.trail.length>18)this.trail.shift();if(this.t>=1){if(this.loop)this.t=0;else this.done=true;}}
+  getPos(t){t=Math.min(1,t);const s=Math.floor(t*(this.path.length-1));const f=(t*(this.path.length-1))-s;const a=this.path[Math.min(s,this.path.length-2)];const b=this.path[Math.min(s+1,this.path.length-1)];return{x:lerp(a.x,b.x,f),y:lerp(a.y,b.y,f)};}
+  draw(ctx){const pos=this.getPos(this.t);this.trail.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,this.size*0.5,0,Math.PI*2);ctx.fillStyle=hex(this.color,(i/this.trail.length)*0.4);ctx.fill();});const g=ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,this.size*3);g.addColorStop(0,hex(this.color,0.6));g.addColorStop(1,hex(this.color,0));ctx.beginPath();ctx.arc(pos.x,pos.y,this.size*3,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();ctx.beginPath();ctx.arc(pos.x,pos.y,this.size,0,Math.PI*2);ctx.fillStyle=hex(this.color,1);ctx.fill();if(this.label&&this.size>3){ctx.font=`500 9px ${FM}`;ctx.fillStyle=hex(this.color,0.9);ctx.fillText(this.label,pos.x+this.size+2,pos.y-this.size-2);}}
+}
+
+function drawNode(ctx,x,y,w,h,color,title,sub,icon,r){r=r||8;ctx.beginPath();rr(ctx,x-w/2,y-h/2,w,h,r);ctx.fillStyle=C.bg3;ctx.fill();ctx.strokeStyle=hex(color,0.5);ctx.lineWidth=1.5;ctx.beginPath();rr(ctx,x-w/2,y-h/2,w,h,r);ctx.stroke();ctx.beginPath();rr(ctx,x-w/2,y-h/2,w,3,r);ctx.fillStyle=hex(color,0.8);ctx.fill();const g=ctx.createRadialGradient(x,y,0,x,y,w*0.7);g.addColorStop(0,hex(color,0.05));g.addColorStop(1,hex(color,0));ctx.beginPath();rr(ctx,x-w/2,y-h/2,w,h,r);ctx.fillStyle=g;ctx.fill();ctx.font=`14px serif`;ctx.textAlign='center';ctx.fillText(icon,x,y-h/2+20);ctx.font=`600 11px ${F}`;ctx.fillStyle=C.tx;ctx.textAlign='center';ctx.fillText(title,x,y+2);if(sub){ctx.font=`400 9px ${FM}`;ctx.fillStyle=C.ts;ctx.fillText(sub,x,y+14);}}
+function drawEdge(ctx,x1,y1,x2,y2,c,d){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=hex(c,0.2);ctx.lineWidth=1.5;if(d)ctx.setLineDash([4,4]);else ctx.setLineDash([]);ctx.stroke();ctx.setLineDash([]);}
+function rr(ctx,x,y,w,h,r){ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+function addLog(id,msg,c){const el=document.getElementById(id);if(!el)return;const d=document.createElement('div');d.className='pkt-entry new';d.style.color=c||C.g;d.textContent='→ '+msg;el.appendChild(d);setTimeout(()=>d.classList.remove('new'),500);while(el.children.length>9)el.removeChild(el.children[1]);}
+function setLegend(id,items){const el=document.getElementById(id);if(!el)return;el.innerHTML=items.map(([c,l])=>`<div class="leg"><div class="leg-dot" style="background:${c}"></div>${l}</div>`).join('');}
+function setSteps(id,steps,active){const el=document.getElementById(id);if(!el)return;el.innerHTML=`<div class="step-title">Flujo activo</div>`+steps.map((s,i)=>`<div class="step-item ${i===active?'active-step':''}"><span class="step-num">${i+1}.</span><span>${s}</span></div>`).join('');}
+
+// ─── PAGE A: SENSOR NODE ─────────────────────────────────────
+function initA(){
+  const cv=document.getElementById('cvA'),ctx=cv.getContext('2d');
+  let W,H,particles=[],frame=0,stepIdx=0,stepTimer=0;
+  function resize(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;}
+  resize();window.addEventListener('resize',resize);
+  setLegend('legA',[[C.g,'Lectura de suelo (15 min)'],[C.o,'RS-485 serial'],[C.b,'HTTP POST → gateway'],[C.t,'Validación de rango'],[C.y,'Timestamp sincronizado'],[C.r,'Lectura fuera de rango']]);
+  const steps=['Ciclo de lectura cada 15 min','RS-485 query a sensor de suelo','Recibir: humedad · pH · temp · NPK · EC','Validar rangos por tipo de sensor','Añadir machine_id + timestamp (NTP)','POST /api/reading al gateway (LAN)','Gateway ACK 200','Esperar siguiente ciclo'];
+  function nodes(){const cx=W/2,cy=H/2;return{timer:{x:cx-380,y:cy-100,w:120,h:52,color:C.y,icon:'⏱️',title:'Timer 15min',sub:'ciclo de lectura'},rs485:{x:cx-200,y:cy-100,w:120,h:52,color:C.o,icon:'🔌',title:'RS-485 Bus',sub:'serial query'},hum:{x:cx+20,y:cy-180,w:120,h:52,color:C.g,icon:'💧',title:'Humedad',sub:'% VWC'},ph:{x:cx+20,y:cy-80,w:120,h:52,color:C.g,icon:'⚗️',title:'pH Suelo',sub:'0–14'},temp:{x:cx+20,y:cy+20,w:120,h:52,color:C.o,icon:'🌡️',title:'Temperatura',sub:'°C'},npk:{x:cx+20,y:cy+120,w:120,h:52,color:C.t,icon:'🌱',title:'NPK',sub:'N · P · K mg/kg'},ec:{x:cx+200,y:cy-30,w:120,h:52,color:C.b,icon:'⚡',title:'EC Suelo',sub:'mS/cm'},valid:{x:cx+200,y:cy+120,w:120,h:52,color:C.t,icon:'✅',title:'Validación',sub:'rango · timestamp'},gw:{x:cx+380,y:cy+40,w:120,h:52,color:C.g,icon:'⚙️',title:'Gateway',sub:'POST /api/reading'},};}
+  function spawn(){const n=nodes();particles=[];[[n.timer,n.rs485,C.y,'ciclo'],[n.rs485,n.hum,C.g,'query'],[n.rs485,n.ph,C.g,'query'],[n.rs485,n.temp,C.o,'query'],[n.rs485,n.npk,C.t,'query'],[n.ec,n.valid,C.b,'EC'],[n.hum,n.valid,C.g,'hum'],[n.valid,n.gw,C.b,'POST reading']].forEach((s,i)=>{setTimeout(()=>{for(let k=0;k<2;k++){const p=new Particle([{x:s[0].x,y:s[0].y},{x:s[1].x,y:s[1].y}],s[2],s[3],1.2+(k*.2),4.5,true);p.t=k*0.5;particles.push(p);}},i*140);});}
+  function draw(){ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(255,255,255,0.02)';ctx.lineWidth=1;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    const n=nodes();const bx=n.timer.x-70,by=n.hum.y-40,bw=n.gw.x-bx+80,bh=n.npk.y-by+90;
+    ctx.beginPath();rr(ctx,bx,by,bw,bh,12);ctx.strokeStyle='rgba(74,222,128,0.07)';ctx.setLineDash([6,4]);ctx.lineWidth=1;ctx.stroke();ctx.setLineDash([]);
+    ctx.font=`500 10px ${FM}`;ctx.fillStyle='rgba(74,222,128,0.18)';ctx.textAlign='left';ctx.fillText('Raspberry Pi 3 — Red LAN finca — sin internet',bx+10,by+14);
+    [[n.timer,n.rs485,C.y],[n.rs485,n.hum,C.g],[n.rs485,n.ph,C.g],[n.rs485,n.temp,C.o],[n.rs485,n.npk,C.t],[n.ec,n.valid,C.b],[n.hum,n.valid,C.g],[n.ph,n.valid,C.g],[n.valid,n.gw,C.b]].forEach(([a,b,c])=>drawEdge(ctx,a.x,a.y,b.x,b.y,c));
+    Object.values(n).forEach(nd=>drawNode(ctx,nd.x,nd.y,nd.w,nd.h,nd.color,nd.title,nd.sub,nd.icon));
+    particles=particles.filter(p=>{p.update();p.draw(ctx);return!p.done;});frame++;stepTimer++;
+    if(stepTimer>120){stepTimer=0;stepIdx=(stepIdx+1)%steps.length;}setSteps('stepsA',steps,stepIdx);
+    if(frame%65===0){const msgs=[['hum: 42.3% · pH: 6.8 · temp: 24.1°C',C.g],['NPK: N=180 P=45 K=210 mg/kg',C.t],['EC: 1.24 mS/cm · válido',C.b],['POST /api/reading → ACK 200',C.g],['machine_id: pi3-f001-z2 · ts: OK',C.y],['⚠ EC fuera de rango → flag',C.r]];const m=msgs[Math.floor(Math.random()*msgs.length)];addLog('logA',m[0],m[1]);}
+    requestAnimationFrame(draw);}
+  spawn();draw();}
+
+// ─── PAGE B: FARM GATEWAY ────────────────────────────────────
+function initB(){
+  const cv=document.getElementById('cvB'),ctx=cv.getContext('2d');
+  let W,H,particles=[],frame=0,stepIdx=0,stepTimer=0;
+  function resize(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;}
+  resize();window.addEventListener('resize',resize);
+  setLegend('legB',[[C.g,'Lecturas sensores → SQLite'],[C.b,'Pre-check duplicados → Aurora'],[C.o,'Zone / crop management'],[C.t,'Sync queue (reliable path)'],[C.p,'Background notify (fast path)']]);
+  const steps=['Pi 3 POST /api/reading al gateway','Gateway INSERT en SQLite (FCFS auto-inc)','Ciclo upload: SELECT pendientes','Query Aurora: machine_id + timestamp existe?','Filtrar duplicados del batch','INSERT solo registros nuevos en Aurora','Marcar como uploaded en SQLite','Zone/crop changes → dual-path propagation'];
+  function draw(){ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(255,255,255,0.025)';ctx.lineWidth=1;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    const cx=W/2,cy=H/2;
+    // Sensor nodes
+    const nodes=[{x:cx-380,y:cy-140,c:C.g,t:'Pi3 Zona 1',s:'pi3-f001-z1'},{x:cx-380,y:cy,c:C.t,t:'Pi3 Zona 2',s:'pi3-f001-z2'},{x:cx-380,y:cy+140,c:C.o,t:'Pi3 Zona 3',s:'pi3-f001-z3'}];
+    // Gateway components
+    const flask={x:cx-140,y:cy};const db={x:cx-140,y:cy-130};const zones={x:cx-140,y:cy+130};const pcheck={x:cx+80,y:cy-130};const aurora={x:cx+290,y:cy-130};const queue={x:cx+80,y:cy+80};const notify={x:cx+80,y:cy+180};
+    nodes.forEach(n=>drawNode(ctx,n.x,n.y,118,52,n.c,n.t,n.s,'🖥️'));
+    drawNode(ctx,flask.x,flask.y,128,54,C.g,'Flask Gateway','Pi4/x86 · API','⚙️');
+    drawNode(ctx,db.x,db.y,128,52,C.b,'SQLite Local','readings · zones','🗄️');
+    drawNode(ctx,zones.x,zones.y,128,52,C.o,'Zone Manager','50 cultivos','🗺️');
+    drawNode(ctx,pcheck.x,pcheck.y,128,52,C.b,'Pre-check','machine_id+ts','🔍');
+    drawNode(ctx,aurora.x,aurora.y,128,56,C.g,'AWS Aurora','MySQL cloud','☁️');
+    drawNode(ctx,queue.x,queue.y,128,50,C.t,'Sync Queue','reliable path','📤');
+    drawNode(ctx,notify.x,notify.y,128,50,C.p,'BG Notify','fast path','⚡');
+    nodes.forEach(n=>{drawEdge(ctx,n.x,n.y,flask.x,flask.y,n.c);});
+    [[flask,db,C.b],[flask,zones,C.o],[db,pcheck,C.b],[pcheck,aurora,C.g],[zones,queue,C.t],[zones,notify,C.p],[queue,aurora,C.t,true],[notify,aurora,C.p,true]].forEach(([a,b,c,d])=>drawEdge(ctx,a.x,a.y,b.x,b.y,c,d));
+    ctx.font=`500 10px ${FM}`;ctx.fillStyle=hex(C.g,0.2);ctx.textAlign='left';
+    ctx.fillText('Red LAN finca',cx-420,cy-200);ctx.fillStyle=hex(C.g,0.15);ctx.textAlign='right';ctx.fillText('AWS Cloud',cx+390,cy-180);
+    particles=particles.filter(p=>{p.update();p.draw(ctx);return!p.done;});frame++;stepTimer++;
+    if(stepTimer>130){stepTimer=0;stepIdx=(stepIdx+1)%steps.length;}setSteps('stepsB',steps,stepIdx);
+    if(frame%70===0){const node=nodes[Math.floor(Math.random()*nodes.length)];particles.push(new Particle([{x:node.x,y:node.y},{x:flask.x,y:flask.y}],node.c,'reading',1.3,4.5,false));setTimeout(()=>{particles.push(new Particle([{x:flask.x,y:flask.y},{x:db.x,y:db.y}],C.b,'INSERT',1.2,4,false));setTimeout(()=>{particles.push(new Particle([{x:db.x,y:db.y},{x:pcheck.x,y:pcheck.y}],C.b,'pre-check',1.0,4,false));setTimeout(()=>{particles.push(new Particle([{x:pcheck.x,y:pcheck.y},{x:aurora.x,y:aurora.y}],C.g,'INSERT new',1.0,4.5,false));addLog('logB',`${node.s} → ${Math.floor(Math.random()*5)+1} lecturas → Aurora`,C.g);},400);},350);},350);}
+    requestAnimationFrame(draw);}
+  draw();}
+
+// ─── PAGE C: CLOUD PIPELINE ──────────────────────────────────
+function initC(){
+  const cv=document.getElementById('cvC'),ctx=cv.getContext('2d');
+  let W,H,particles=[],frame=0,stepIdx=0,stepTimer=0;
+  function resize(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;}
+  resize();window.addEventListener('resize',resize);
+  setLegend('legC',[[C.g,'Datos de finca → Aurora'],[C.b,'Business API: clientes y fincas'],[C.r,'Alerta crítica → agricultor'],[C.o,'Warning → botánico'],[C.p,'Gestión subscripciones']]);
+  const steps=['Gateway batch upload → Aurora','Motor alertas polling Aurora (N min)','SELECT últimas lecturas por zona','Comparar vs umbrales por cultivo','Clasificar: crítico · warning · info','Notificar agricultor: SMS + WhatsApp','Log alerta en Aurora: alerts table','Business API: actualiza inventario cliente'];
+  function draw(){ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(255,255,255,0.02)';ctx.lineWidth=1;for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    const cx=W/2,cy=H/2;
+    const aurora={x:cx-80,y:cy};const alerts={x:cx+120,y:cy-120};const api={x:cx+120,y:cy+80};const dash={x:cx+320,y:cy-120};const farmer={x:cx+320,y:cy-20};const botanist={x:cx+320,y:cy+80};const admin={x:cx+320,y:cy+180};
+    const gateways=[{x:cx-320,y:cy-120,c:C.g,t:'Gateway F001',s:'Finca Norte'},{x:cx-320,y:cy+40,c:C.t,t:'Gateway F002',s:'Finca Sur'},{x:cx-320,y:cy+180,c:C.o,t:'Gateway F003',s:'Finca Este'}];
+    gateways.forEach(g=>drawNode(ctx,g.x,g.y,120,52,g.c,g.t,g.s,'⚙️'));
+    drawNode(ctx,aurora.x,aurora.y,140,62,C.g,'AWS Aurora','MySQL · BD maestra','☁️');
+    drawNode(ctx,alerts.x,alerts.y,130,54,C.r,'bp-agro-alerts','polling · umbrales','🚨');
+    drawNode(ctx,api.x,api.y,130,54,C.b,'bp-agro-business-api','clientes · fincas','🐍');
+    drawNode(ctx,dash.x,dash.y,120,50,C.o,'Botanist Dashboard','analytics','🌿');
+    drawNode(ctx,farmer.x,farmer.y,120,50,C.r,'Agricultor','SMS+WhatsApp','🌾');
+    drawNode(ctx,botanist.x,botanist.y,120,50,C.t,'Botánico','datos históricos','🌿');
+    drawNode(ctx,admin.x,admin.y,120,50,C.b,'Admin BP','gestión clientes','⚙️');
+    gateways.forEach(g=>drawEdge(ctx,g.x,g.y,aurora.x,aurora.y,g.c));
+    [[aurora,alerts,C.r],[aurora,api,C.b],[aurora,dash,C.o],[alerts,farmer,C.r],[dash,botanist,C.t],[api,admin,C.b]].forEach(([a,b,c])=>drawEdge(ctx,a.x,a.y,b.x,b.y,c,false));
+    particles=particles.filter(p=>{p.update();p.draw(ctx);return!p.done;});frame++;stepTimer++;
+    if(stepTimer>130){stepTimer=0;stepIdx=(stepIdx+1)%steps.length;}setSteps('stepsC',steps,stepIdx);
+    if(frame%65===0){const gw=gateways[Math.floor(Math.random()*gateways.length)];particles.push(new Particle([{x:gw.x,y:gw.y},{x:aurora.x,y:aurora.y}],gw.c,'batch',1.2,4.5,false));setTimeout(()=>{const isCrit=Math.random()>0.65;if(isCrit){particles.push(new Particle([{x:aurora.x,y:aurora.y},{x:alerts.x,y:alerts.y}],C.r,'poll!',1.0,4,false));setTimeout(()=>{particles.push(new Particle([{x:alerts.x,y:alerts.y},{x:farmer.x,y:farmer.y}],C.r,'ALERTA SMS',1.1,5,false));addLog('logC','⚠ pH crítico → SMS agricultor',C.r);},400);}else{particles.push(new Particle([{x:aurora.x,y:aurora.y},{x:api.x,y:api.y}],C.b,'API query',0.9,4,false));addLog('logC',`${gw.s} → ${Math.floor(Math.random()*20)+5} lecturas OK`,C.g);}},450);}
+    requestAnimationFrame(draw);}
+  draw();}
+
+// ─── PAGE D: BOTANIST DASHBOARD ──────────────────────────────
+function initD(){
+  const cv=document.getElementById('cvD'),ctx=cv.getContext('2d');
+  let W,H,particles=[],frame=0;
+  function resize(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;}
+  resize();window.addEventListener('resize',resize);
+  setLegend('legD',[[C.g,'GET clientes / fincas'],[C.b,'GET zonas / lecturas'],[C.o,'GET historial cultivos'],[C.t,'GET calibración'],[C.p,'Renderizado gráficas']]);
+  function draw(){ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(255,255,255,0.02)';ctx.lineWidth=1;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    const cx=W/2,cy=H/2;const tier=(H-80)/4;
+    const ui={x:cx,y:80+tier*0};const fetch_={x:cx,y:80+tier*1};const api={x:cx,y:80+tier*2};const aurora={x:cx,y:80+tier*3};
+    const charts={x:cx-250,y:80+tier*1};const hist={x:cx+250,y:80+tier*1};const calib={x:cx-250,y:80+tier*2};const crops={x:cx+250,y:80+tier*2};
+    drawNode(ctx,ui.x,ui.y,180,56,C.g,'Dashboard Botánico','HTML · JS · sin mocks','🌿');
+    drawNode(ctx,fetch_.x,fetch_.y,180,52,C.b,'fetch() API','llamadas reales','⬇️');
+    drawNode(ctx,api.x,api.y,180,56,C.b,'bp-agro-business-api','/clients /farms /zones','🐍');
+    drawNode(ctx,aurora.x,aurora.y,180,56,C.g,'AWS Aurora','todos los históricos','☁️');
+    drawNode(ctx,charts.x,charts.y,130,52,C.p,'Gráficas','hum · pH · NPK · EC','📊');
+    drawNode(ctx,hist.x,hist.y,130,52,C.t,'Histórico','datos sin procesar','📈');
+    drawNode(ctx,calib.x,calib.y,130,52,C.t,'Calibración','por sensor · fecha','📏');
+    drawNode(ctx,crops.x,crops.y,130,52,C.o,'Rotación','historial cultivos','🌱');
+    [[ui,fetch_,C.g],[fetch_,api,C.b],[api,aurora,C.b],[aurora,api,C.g,true],[api,fetch_,C.g,true]].forEach(([a,b,c,d])=>drawEdge(ctx,a.x,a.y,b.x,b.y,c,d));
+    drawEdge(ctx,fetch_.x,fetch_.y,charts.x,charts.y,C.p);drawEdge(ctx,fetch_.x,fetch_.y,hist.x,hist.y,C.t);drawEdge(ctx,api.x,api.y,calib.x,calib.y,C.t);drawEdge(ctx,api.x,api.y,crops.x,crops.y,C.o);
+    ctx.font=`600 10px ${FM}`;ctx.fillStyle=hex(C.g,0.4);ctx.textAlign='center';ctx.fillText('Sin datos simulados — fetch() a API real en cada carga',cx,H-16);
+    particles=particles.filter(p=>{p.update();p.draw(ctx);return!p.done;});frame++;
+    if(frame%80===0){const endpoints=['/clients','/farms/F001','/zones/Z001','/readings/Z001?limit=500','/crop-history/Z001','/calibration/pi3-z001'];const colors=[C.g,C.b,C.b,C.t,C.o,C.t];const i=Math.floor(Math.random()*endpoints.length);particles.push(new Particle([{x:ui.x,y:ui.y},{x:fetch_.x,y:fetch_.y}],C.g,'fetch()',1.3,4.5,false));setTimeout(()=>{particles.push(new Particle([{x:fetch_.x,y:fetch_.y},{x:api.x,y:api.y}],C.b,endpoints[i],1.1,4,false));setTimeout(()=>{particles.push(new Particle([{x:api.x,y:api.y},{x:aurora.x,y:aurora.y}],C.g,'SELECT',1.0,4,false));setTimeout(()=>{particles.push(new Particle([{x:aurora.x,y:aurora.y},{x:api.x,y:api.y}],C.g,'data[]',1.1,4,false));addLog('logD',`${endpoints[i]} → datos reales`,colors[i]);},400);},400);},350);}
+    requestAnimationFrame(draw);}
+  draw();}
+
+// ─── PAGE E: FULL OVERVIEW ────────────────────────────────────
+function initE(){
+  const cv=document.getElementById('cvE'),ctx=cv.getContext('2d');
+  let W,H,particles=[],frame=0;
+  function resize(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;}
+  resize();window.addEventListener('resize',resize);
+  setLegend('legE',[[C.g,'Sensor readings (Pi3 → gateway)'],[C.b,'Batch upload (gateway → Aurora)'],[C.r,'Alertas críticas → agricultor'],[C.o,'Analytics → botánico'],[C.t,'Gestión clientes (Business API)'],[C.p,'Dashboard análisis']]);
+  function draw(){ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(255,255,255,0.02)';ctx.lineWidth=1;for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    const cx=W/2,cy=H/2,tierH=H/5;
+    const tiers=[{y:tierH*0.5,label:'CAMPO',sub:'Raspberry Pi 3 · RS-485 · lecturas 15 min · Red LAN finca',c:C.g},{y:tierH*1.5,label:'GATEWAYS',sub:'Pi 4 / x86 · SQLite · Zone Manager · AuroraUploader · pre-check',c:C.o},{y:tierH*2.5,label:'CLOUD — AWS AURORA',sub:'BD maestra · alertas · business API · botanist dashboard',c:C.b},{y:tierH*3.5,label:'USUARIOS',sub:'Agricultor · Botánico / Agrónomo · Administrador BP',c:C.p}];
+    tiers.forEach(t=>{ctx.beginPath();ctx.moveTo(30,t.y+20);ctx.lineTo(W-30,t.y+20);ctx.strokeStyle=hex(t.c,0.06);ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);ctx.font=`600 10px ${F}`;ctx.fillStyle=hex(t.c,0.4);ctx.textAlign='left';ctx.fillText(t.label,36,t.y+15);ctx.font=`400 9px ${FM}`;ctx.fillStyle=C.tss;ctx.fillText(t.sub,36,t.y+28);});
+    const sensorY=tierH*0.5+40;const sensors=[{x:cx-300,c:C.g,t:'Pi3 F001-Z1'},{x:cx-100,c:C.t,t:'Pi3 F001-Z2'},{x:cx+100,c:C.o,t:'Pi3 F002-Z1'},{x:cx+300,c:C.y,t:'Pi3 F003-Z1'}];
+    sensors.forEach(s=>drawNode(ctx,s.x,sensorY,100,50,s.c,s.t,'sensor','🔬'));
+    const gwY=tierH*1.5+40;const gws=[{x:cx-200,c:C.g,t:'GW F001',s:'Finca Norte'},{x:cx+100,c:C.o,t:'GW F002-3',s:'Finca Sur/Este'}];
+    gws.forEach(g=>drawNode(ctx,g.x,gwY,120,52,g.c,g.t,g.s,'⚙️'));
+    sensors.forEach((s,i)=>{const gw=gws[i<2?0:1];drawEdge(ctx,s.x,sensorY,gw.x,gwY,s.c);});
+    const cloudY=tierH*2.5+40;const aurora={x:cx,y:cloudY};const alerts={x:cx-200,y:cloudY};const api={x:cx+200,y:cloudY};
+    drawNode(ctx,aurora.x,aurora.y,130,58,C.g,'AWS Aurora','BD maestra','☁️');
+    drawNode(ctx,alerts.x,alerts.y,120,52,C.r,'Alertas','bp-agro-alerts','🚨');
+    drawNode(ctx,api.x,api.y,120,52,C.b,'Business API','clientes · fincas','🐍');
+    gws.forEach(g=>drawEdge(ctx,g.x,gwY,aurora.x,cloudY,g.c));
+    drawEdge(ctx,aurora.x,cloudY,alerts.x,cloudY,C.r,false);drawEdge(ctx,aurora.x,cloudY,api.x,cloudY,C.b,false);
+    const usrY=tierH*3.5+40;const users=[{x:cx-240,c:C.r,t:'Agricultor',s:'SMS+WhatsApp'},{x:cx,c:C.p,t:'Botánico',s:'dashboard'},{x:cx+240,c:C.b,t:'Admin BP',s:'gestión'}];
+    users.forEach(u=>drawNode(ctx,u.x,usrY,120,52,u.c,u.t,u.s,'👤'));
+    drawEdge(ctx,alerts.x,cloudY,users[0].x,usrY,C.r);drawEdge(ctx,aurora.x,cloudY,users[1].x,usrY,C.p);drawEdge(ctx,api.x,cloudY,users[2].x,usrY,C.b);
+    particles=particles.filter(p=>{p.update();p.draw(ctx);return!p.done;});frame++;
+    if(frame%55===0){const sensor=sensors[Math.floor(Math.random()*sensors.length)];const gw=gws[sensors.indexOf(sensor)<2?0:1];particles.push(new Particle([{x:sensor.x,y:sensorY},{x:gw.x,y:gwY}],sensor.c,'reading',1.3,4,false));setTimeout(()=>{particles.push(new Particle([{x:gw.x,y:gwY},{x:aurora.x,y:cloudY}],gw.c,'batch',1.0,4,false));setTimeout(()=>{const isCrit=Math.random()>0.7;if(isCrit){particles.push(new Particle([{x:aurora.x,y:cloudY},{x:alerts.x,y:cloudY}],C.r,'alert',1.1,4.5,false));setTimeout(()=>{particles.push(new Particle([{x:alerts.x,y:cloudY},{x:users[0].x,y:usrY}],C.r,'SMS',1.2,5,false));addLog('logE','⚠ ALERTA → agricultor SMS',C.r);},350);}else{particles.push(new Particle([{x:aurora.x,y:cloudY},{x:users[1].x,y:usrY}],C.p,'analytics',0.9,4,false));addLog('logE',`${sensor.t} → batch OK → Aurora`,sensor.c);}},400);},400);}
+    requestAnimationFrame(draw);}
+  draw();}
+
+const pages=document.querySelectorAll('.page');
+const tabs=document.querySelectorAll('.tab');
+const inits=[initA,initB,initC,initD,initE];
+const initialized=[false,false,false,false,false];
+function goPage(i,el){pages.forEach(p=>p.classList.remove('on'));tabs.forEach(t=>t.classList.remove('on'));pages[i].classList.add('on');el.classList.add('on');if(!initialized[i]){initialized[i]=true;setTimeout(()=>inits[i](),80);}}
+window.addEventListener('load',()=>{initialized[0]=true;setTimeout(()=>initA(),100);});
+</script>
+</body>
+</html>

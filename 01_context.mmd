@@ -1,0 +1,18 @@
+---
+title: BP Agro — Diagrama de Contexto (Nivel 0)
+---
+flowchart TD
+    FARMER["🌾 Agricultor / Cliente\nFinca comercial"]
+    BOTANIST["🌿 Botánico / Agrónomo\nAnálisis de cultivos"]
+    ADMIN["⚙️ Administrador\nBP Technology"]
+    QRAPP["📱 App QR\nAsignación de nodos"]
+
+    BPAGRO(["🌱 BP Agro\nPlataforma IoT\nAgrícola"])
+
+    FARMER  -->|"Suscripción · acceso\na datos de su finca"| BPAGRO
+    BPAGRO  -->|"Alertas de suelo\nRecomendaciones"| FARMER
+    BOTANIST-->|"Consulta datos\nsin procesar + histórico"| BPAGRO
+    BPAGRO  -->|"Dashboard analítico\npor zona y cultivo"| BOTANIST
+    ADMIN   -->|"Gestión clientes\ny fincas"| BPAGRO
+    QRAPP   -->|"Asignación sensor\na gateway via QR"| BPAGRO
+    BPAGRO  -->|"Datos IoT + alertas\ncríticas"| ADMIN

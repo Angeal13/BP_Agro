@@ -1,0 +1,27 @@
+---
+title: BP Agro — Botanist Dashboard (bp-agro-botanist-dashboard)
+---
+flowchart LR
+    subgraph BROWSER["🌿 Botanist Dashboard (HTML + JS)"]
+        UI["Interfaz\nCliente · Finca · Zona"]
+        FETCH["fetch() → API\nREST calls"]
+        CHARTS["📊 Charts\nhumedad · pH · NPK · EC"]
+        HIST["📈 Histórico\ntodos los registros\n(datos sin procesar)"]
+        CALIB_VIEW["📏 Calibración\nvisualización"]
+    end
+
+    subgraph API["bp-agro-business-api"]
+        CLIENTS["GET /clients"]
+        FARMS["GET /farms/{client_id}"]
+        ZONES["GET /zones/{farm_id}"]
+        READINGS["GET /readings/{zone_id}"]
+        CROPS["GET /crop-history/{zone_id}"]
+    end
+
+    AURORA["🗄️ AWS Aurora\nDatos históricos completos"]
+
+    UI --> FETCH
+    FETCH -->|"sin mocks — datos reales"| CLIENTS & FARMS & ZONES & READINGS & CROPS
+    CLIENTS & FARMS & ZONES & READINGS & CROPS --> AURORA
+    READINGS --> CHARTS & HIST
+    CROPS --> CALIB_VIEW

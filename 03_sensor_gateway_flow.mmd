@@ -1,0 +1,29 @@
+---
+title: BP Agro — Flujo Sensor Node → Gateway → Aurora
+---
+sequenceDiagram
+    participant SENS as 🔬 Sensores Suelo
+    participant PI3 as 🖥️ Pi 3 Node
+    participant GW as ⚙️ Farm Gateway
+    participant DB as 🗄️ SQLite Local
+    participant CHK as 🔍 Pre-check
+    participant AUR as ☁️ AWS Aurora
+
+    loop Cada 15 minutos
+        SENS->>PI3: Lectura: humedad, pH, temp, NPK, EC
+        PI3->>PI3: Valida rango de sensores
+        PI3->>GW: POST /api/reading\n{machine_id, timestamp, valores}
+        GW->>DB: INSERT reading (FCFS auto-increment)
+        GW-->>PI3: ACK 200
+    end
+
+    loop Ciclo de upload (batch)
+        GW->>DB: SELECT readings pendientes
+        GW->>CHK: Query Aurora: ¿existe machine_id + timestamp?
+        CHK->>AUR: SELECT WHERE machine_id AND timestamp IN (batch)
+        AUR-->>CHK: Registros existentes
+        CHK-->>GW: Filtrar duplicados
+        GW->>AUR: INSERT solo registros nuevos
+        AUR-->>GW: OK — rows inserted
+        GW->>DB: Marcar como uploaded
+    end

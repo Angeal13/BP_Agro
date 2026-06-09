@@ -1,0 +1,21 @@
+---
+title: BP Agro — Asignación de Nodo via QR
+---
+sequenceDiagram
+    actor TECH as 🔧 Técnico BP
+    participant QRAPP as 📱 App QR
+    participant GW as ⚙️ Farm Gateway
+    participant DB as 🗄️ SQLite Gateway
+    participant API as 🐍 BP Agro API
+
+    TECH->>QRAPP: Escanea QR del sensor Pi 3
+    QRAPP->>QRAPP: Extrae machine_id del QR
+    QRAPP->>GW: POST /api/nodes/assign\n{machine_id, zone_id}
+    GW->>DB: INSERT sensor_node\n(machine_id, zone_id, assigned_at)
+    DB-->>GW: OK
+    GW-->>QRAPP: Nodo asignado a zona
+    QRAPP-->>TECH: ✅ Sensor registrado
+
+    Note over GW: Sensor empieza a enviar\nlecturas cada 15 min
+    GW->>API: Notifica nuevo nodo\nen finca (background)
+    API->>API: Actualiza inventario\nde dispositivos del cliente

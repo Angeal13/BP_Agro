@@ -1,0 +1,25 @@
+---
+title: BP Agro — Flujo de Alertas (bp-agro-alerts)
+---
+flowchart TD
+    subgraph CLOUD["☁️ bp-agro-alerts"]
+        POLL["⏱️ Polling Aurora\nN minutos"]
+        CHECK["📏 Check Umbrales\npor zona y cultivo"]
+        CLASSIFY["🔴 Clasificar\ncrítico · warning · info"]
+        NOTIFY["📲 Notificador\nSMS · WhatsApp · email"]
+        LOG["📋 Log alertas\nAurora: alerts table"]
+    end
+
+    AURORA["🗄️ Aurora\nReadings recientes"]
+    FARMER["🌾 Agricultor"]
+    BOTANIST["🌿 Botánico"]
+    ADMIN["⚙️ Admin BP"]
+
+    AURORA -->|"SELECT últimas lecturas"| POLL
+    POLL --> CHECK
+    CHECK -->|"Supera umbral"| CLASSIFY
+    CLASSIFY -->|"crítico"| NOTIFY
+    CLASSIFY -->|"all"| LOG
+    NOTIFY -->|"SMS / WhatsApp"| FARMER
+    NOTIFY -->|"email resumen"| BOTANIST
+    NOTIFY -->|"crítico"| ADMIN

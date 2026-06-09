@@ -1,0 +1,29 @@
+---
+title: BP Agro — Gestión de Zonas y Cultivos (Gateway)
+---
+flowchart LR
+    subgraph GW["⚙️ Farm Gateway"]
+        ZONE_API["🗺️ Zone Manager\nAPI Flask"]
+        ZONE_DB["🗄️ SQLite\nzones · crops\nzone_crop_history\nsensor_calibration"]
+        SYNC_Q["📤 Sync Queue\n→ Aurora"]
+        NOTIFY["⚡ Background\nNotify (fast path)"]
+    end
+
+    subgraph OPS["Operaciones de Zona"]
+        CREATE["Crear zona\n+ asignar sensores"]
+        CROP["Asignar cultivo\nbulk assignment"]
+        RENAME["Renombrar zona\ncon cascade"]
+        DELETE["Force-delete\nunassign sensores"]
+        ROTATE["Rotación de cultivo\nhistorial"]
+        CALIB["Calibrar sensor\ntable: calibration"]
+    end
+
+    CREATE & CROP & RENAME & DELETE & ROTATE --> ZONE_API
+    ZONE_API --> ZONE_DB
+    ZONE_API -->|"cambios de cultivo"| SYNC_Q
+    ZONE_API -->|"notify inmediato"| NOTIFY
+    SYNC_Q -->|"reliable path"| AURORA["☁️ Aurora"]
+    NOTIFY -->|"fast path"| AURORA
+
+    note1["50 tipos de cultivo\nsoportados (SUPPORTED_CROPS)"]
+    note2["Historial de rotación\npermanente para agrónomo"]
