@@ -1,6 +1,6 @@
 # BP Agro — Plataforma IoT Agrícola
 
-**BP Technology · Guinea Ecuatorial · 2026**
+**BP Technology · 2026**
 
 > Plataforma comercial de monitoreo de suelos en tiempo real para fincas agrícolas de Guinea Ecuatorial. Sistema IoT distribuido con sensores de campo, gateway por finca, almacenamiento en AWS Aurora y dashboards analíticos para agrónomos.
 
@@ -28,7 +28,7 @@ BP Agro es la plataforma de ingresos comerciales de BP Technology. Cada finca cl
 
 ```
 Sensores de suelo (RS-485 / GPIO)
-    ↓  lectura cada 15 min
+    ↓  lectura cada 5 min
 Raspberry Pi 3 — Sensor Node (SQLite local)
     ↓  POST /api/reading (HTTP LAN)
 Farm Gateway (Pi 4 / x86 — SQLite + Flask)
@@ -146,5 +146,5 @@ Técnico escanea QR del Pi 3
 
 ---
 
-*BP Agro · BP Technology · Guinea Ecuatorial · 2026*  
+*BP Agro · BP Technology · 2026*  
 *Plataforma comercial — no gubernamental*
